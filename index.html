@@ -1,0 +1,1438 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MrPaper - Дизайнер подарочной упаковки</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/3.5.0/remixicon.min.css"
+    />
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/examples/jsm/controls/OrbitControls": "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js"
+      }
+    }
+    </script>
+    <style>
+      /* Стили остаются без изменений, как в вашем исходном коде */
+      :root {
+        --neon-blue: #00f7ff;
+        --neon-purple: #bc13fe;
+        --dark-bg: #0a0b1e;
+        --panel-bg: #0d0e26;
+        --footer-bg: #070812;
+        --text-color: #ffffff;
+        --neon-glow: 0 0 15px rgba(0, 247, 255, 0.8);
+        --text-glow: 0 0 15px rgba(0, 247, 255, 0.8);
+        --panel-border: 2px solid rgba(0, 247, 255, 0.5);
+        --modal-overlay: rgba(10, 11, 30, 0.85);
+        --modal-shadow: 0 0 30px rgba(0, 247, 255, 0.3);
+        --button-hover-bg: rgba(0, 247, 255, 0.1);
+        --button-active-bg: rgba(0, 247, 255, 0.2);
+        --button-hover-shadow: 0 0 20px rgba(0, 247, 255, 1);
+        --input-focus-border: #00f7ff;
+        --input-focus-shadow: 0 0 10px rgba(0, 247, 255, 0.3);
+      }
+
+      [data-theme='light'] {
+        --dark-bg: #f5f5f7;
+        --panel-bg: #ffffff;
+        --footer-bg: #e8e8e8;
+        --text-color: #bc13fe;
+        --neon-glow: 0 0 15px rgba(188, 19, 254, 0.8);
+        --text-glow: 0 0 15px rgba(255, 0, 255, 0.8);
+        --panel-border: 1px solid rgba(0, 0, 0, 0.1);
+        --modal-overlay: rgba(245, 245, 247, 0.85);
+        --modal-shadow: 0 0 30px rgba(255, 105, 180, 0.3);
+        --button-hover-bg: rgba(255, 105, 180, 0.1);
+        --button-active-bg: rgba(255, 105, 180, 0.2);
+        --button-hover-shadow: 0 0 20px rgba(255, 105, 180, 0.5);
+        --input-focus-border: #bc13fe;
+        --input-focus-shadow: 0 0 10px rgba(255, 105, 180, 0.3);
+      }
+
+      [data-theme='light'] h1,
+      [data-theme='light'] h2,
+      [data-theme='light'] h3,
+      [data-theme='light'] h4,
+      [data-theme='light'] p,
+      [data-theme='light'] label,
+      [data-theme='light'] .menu a,
+      [data-theme='light'] .clip-shape-btn span {
+        color: #ff69b4;
+        text-shadow: var(--text-glow);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          sans-serif;
+        background: var(--dark-bg);
+        color: var(--text-color);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        transition: all 0.3s ease;
+      }
+
+      .header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 60px;
+        background: linear-gradient(
+          90deg,
+          var(--neon-blue),
+          var(--neon-purple)
+        );
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 2rem;
+        z-index: 1000;
+      }
+
+      .logo {
+        color: var(--dark-bg);
+        font-size: 1.5rem;
+        font-weight: bold;
+        text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+      }
+
+      .header-controls {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+      }
+
+      .theme-toggle {
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: none;
+        cursor: pointer;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--dark-bg);
+        transition: transform 0.3s ease;
+      }
+
+      .theme-toggle:hover {
+        transform: rotate(45deg);
+      }
+
+      .theme-toggle i {
+        font-size: 24px;
+      }
+
+      .hamburger {
+        width: 32px;
+        height: 32px;
+        position: relative;
+        cursor: pointer;
+        z-index: 1001;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .hamburger span {
+        position: absolute;
+        width: 24px;
+        height: 2px;
+        background: var(--dark-bg);
+        border-radius: 4px;
+        transition: transform 0.3s ease-out;
+      }
+
+      .hamburger span:nth-child(1) {
+        transform: translateY(-8px);
+      }
+      .hamburger span:nth-child(3) {
+        transform: translateY(8px);
+      }
+
+      .hamburger.active span:nth-child(1) {
+        transform: translateY(0) rotate(45deg);
+      }
+
+      .hamburger.active span:nth-child(2) {
+        opacity: 0;
+      }
+
+      .hamburger.active span:nth-child(3) {
+        transform: translateY(0) rotate(-45deg);
+      }
+
+      .sidebar {
+        position: fixed;
+        top: 0;
+        right: -300px;
+        width: 300px;
+        height: 100vh;
+        background: var(--panel-bg);
+        padding-top: 80px;
+        transition: right 0.3s ease-out;
+        z-index: 999;
+        border-left: var(--panel-border);
+        box-shadow: var(--neon-glow);
+      }
+
+      .sidebar.active {
+        right: 0;
+      }
+
+      .menu {
+        list-style: none;
+      }
+
+      .menu a {
+        display: block;
+        padding: 1rem 2rem;
+        color: var(--text-color);
+        text-decoration: none;
+        transition: all 0.3s ease;
+      }
+
+      .menu a:hover {
+        background: var(--button-hover-bg);
+        color: var(--neon-blue);
+      }
+
+      .main-content {
+        margin-top: 60px;
+        display: flex;
+        flex-direction: column;
+        min-height: calc(100vh - 60px);
+        padding: 2rem;
+        gap: 2rem;
+      }
+
+      .top-section {
+        display: flex;
+        min-height: 600px;
+        gap: 2rem;
+      }
+
+      .preview-area {
+        flex: 2;
+        background: var(--panel-bg);
+        border-radius: 10px;
+        border: var(--panel-border);
+        box-shadow: var(--neon-glow);
+        min-height: 600px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .preview-area canvas {
+        width: 100% !important;
+        height: 100% !important;
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+
+      .controls-panel {
+        width: 33.333%;
+        min-width: 300px;
+      }
+
+      .controls-container {
+        background: var(--panel-bg);
+        border-radius: 10px;
+        padding: 2rem;
+        border: var(--panel-border);
+        box-shadow: var(--neon-glow);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+      }
+
+      .upload-box {
+        flex: 1;
+      }
+
+      .upload-box h3 {
+        color: var(--neon-blue);
+        margin-bottom: 1rem;
+        text-shadow: var(--text-glow);
+      }
+
+      .upload-area {
+        background: rgba(255, 255, 255, 0.05);
+        border: 2px dashed rgba(0, 247, 255, 0.3);
+        border-radius: 10px;
+        padding: 1rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        height: calc(100% - 2rem);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .upload-area:hover {
+        border-color: var(--neon-blue);
+        background: var(--button-hover-bg);
+        box-shadow: var(--neon-glow);
+      }
+
+      .color-picker {
+        padding-top: 2rem;
+        border-top: 1px solid rgba(0, 247, 255, 0.2);
+        flex: 1.5;
+      }
+
+      .color-circle.selected {
+        border: 2px solid var(--selected-color, #00ffff);
+        animation: glow-border 1.5s infinite alternate;
+      }
+
+      @keyframes glow-border {
+        0% {
+          border-color: var(--selected-color, #00ffff);
+          box-shadow: 0 0 5px var(--selected-color, #00ffff);
+        }
+        100% {
+          border-color: rgba(var(--selected-color-rgb), 0.8);
+          box-shadow: 0 0 15px var(--selected-color, #00ffff);
+        }
+      }
+
+      [data-theme="light"] .color-circle.selected {
+        --selected-color: #ff0088;
+        --selected-color-rgb: 255, 0, 136;
+      }
+
+      [data-theme="dark"] .color-circle.selected {
+        --selected-color: #00ffff;
+        --selected-color-rgb: 0, 255, 255;
+      }
+
+      .color-picker h3 {
+        color: var(--neon-blue);
+        margin-bottom: 1rem;
+        text-shadow: var(--text-glow);
+      }
+
+      .color-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 12px;
+        place-content: center;
+        margin-bottom: 1.5rem;
+      }
+
+      .color-circle {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+      }
+
+      .color-circle:hover {
+        transform: scale(1.1);
+      }
+
+      .color-circle.active {
+        border: 2px solid var(--neon-blue);
+        box-shadow: var(--neon-glow), 0 0 5px rgba(0, 0, 0, 0.5);
+      }
+
+      .shapes-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+      }
+
+      .shape-button {
+        background: var(--panel-bg);
+        border: var(--panel-border);
+        color: var(--text-color);
+        padding: 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 14px;
+      }
+
+      .shape-button:hover {
+        background: var(--button-hover-bg);
+        box-shadow: var(--neon-glow);
+      }
+
+      .shape-button.active {
+        background: var(--button-active-bg);
+        box-shadow: var(--neon-glow);
+      }
+
+      .shape-button i {
+        font-size: 20px;
+      }
+
+      .cylinder {
+        position: relative;
+        display: inline-block;
+        width: 12px;
+        height: 20px;
+        border: 3px solid currentColor;
+        border-radius: 6px;
+      }
+
+      .settings-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        width: 100%;
+      }
+
+      .settings-section {
+        background: var(--panel-bg);
+        border-radius: 10px;
+        padding: 2rem;
+        border: var(--panel-border);
+        box-shadow: var(--neon-glow);
+        margin-bottom: 10px;
+      }
+
+      .settings-section h2 {
+        color: var(--neon-blue);
+        margin-bottom: 1.5rem;
+        text-shadow: var(--text-glow);
+      }
+
+      .slider-container {
+        margin-bottom: 1.5rem;
+      }
+
+      .slider-container label {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+      }
+
+      input[type='range'] {
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(
+          90deg,
+          var(--neon-blue),
+          var(--neon-purple)
+        );
+        border-radius: 2px;
+        -webkit-appearance: none;
+      }
+
+      input[type='range']::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 16px;
+        height: 16px;
+        background: #fff;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: var(--neon-glow);
+      }
+
+      .clip-shape-selector {
+        margin-top: 1rem;
+        padding: 1rem;
+        background: var(--panel-bg);
+        border-radius: 8px;
+        border: var(--panel-border);
+      }
+
+      .clip-shape-selector h4 {
+        color: var(--neon-blue);
+        margin-bottom: 1rem;
+        text-shadow: var(--text-glow);
+      }
+
+      .clip-shapes {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.8rem;
+      }
+
+      .clip-shape-btn {
+        background: var(--panel-bg);
+        border: var(--panel-border);
+        padding: 0.8rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .clip-shape-btn i {
+        font-size: 1.5rem;
+        color: var(--text-color);
+      }
+
+      .clip-shape-btn span {
+        font-size: 0.9rem;
+        color: var(--text-color);
+      }
+
+      .clip-shape-btn:hover {
+        background: var(--button-hover-bg);
+        box-shadow: var(--neon-glow);
+      }
+
+      .clip-shape-btn.active {
+        background: var(--button-active-bg);
+        box-shadow: var(--neon-glow);
+      }
+
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--modal-overlay);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        backdrop-filter: blur(5px);
+      }
+
+      .modal-overlay.active {
+        display: flex;
+      }
+
+      .modal {
+        background: var(--panel-bg);
+        border: var(--panel-border);
+        border-radius: 12px;
+        padding: 2rem;
+        width: 90%;
+        max-width: 400px;
+        box-shadow: var(--modal-shadow);
+      }
+
+      .modal h3 {
+        color: var(--neon-blue);
+        margin-bottom: 1rem;
+        text-shadow: var(--text-glow);
+        font-size: 1.5rem;
+      }
+
+      .modal p {
+        color: var(--text-color);
+        margin-bottom: 1.5rem;
+        line-height: 1.5;
+      }
+
+      .modal-buttons {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+      }
+
+      .modal-btn {
+        padding: 0.8rem 1.5rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+
+      .modal-btn.confirm {
+        background: linear-gradient(45deg, var(--neon-purple), #ff69b4);
+      }
+      .modal-btn.confirm:hover {
+        box-shadow: 0 0 20px rgba(188, 19, 254, 1);
+        transform: translateY(-1px);
+      }
+
+      .modal-btn.cancel {
+        background: var(--panel-bg);
+        border: var(--panel-border);
+        color: var(--text-color);
+      }
+
+      .modal-btn:hover {
+        box-shadow: var(--button-hover-shadow);
+        transform: translateY(-1px);
+      }
+
+      .action-buttons {
+        display: flex;
+        width: 100%;
+        justify-content: space-between;
+        gap: 2rem;
+        margin-bottom: 1rem;
+        padding-top: 3rem;
+        border-top: 1.5px solid rgba(0, 247, 255, 1);
+      }
+
+      .action-button {
+        width: 300px;
+        padding: 1.2rem 2rem;
+        border: none;
+        color: var(--dark-bg);
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        flex-shrink: 0;
+      }
+
+      .action-button.reset {
+        background: linear-gradient(45deg, var(--neon-purple), #ff69b4);
+      }
+      .action-button.reset:hover {
+        box-shadow: 0 0 20px rgba(188, 19, 254, 1);
+      }
+      .action-button.save {
+        background: linear-gradient(45deg, var(--neon-blue), #0088ff);
+      }
+
+      .action-button:hover {
+        box-shadow: var(--button-hover-shadow);
+      }
+
+      .footer {
+        background: var(--footer-bg);
+        padding: 4rem 2rem 2rem;
+        border-top: var(--panel-border);
+        margin-top: auto;
+      }
+
+      .footer-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+      }
+
+      .footer-section h3 {
+        color: var(--neon-blue);
+        margin-bottom: 1rem;
+        text-shadow: var(--text-glow);
+      }
+
+      .footer-section ul {
+        list-style: none;
+      }
+
+      .footer-section a {
+        color: var(--text-color);
+        text-decoration: none;
+        display: block;
+        padding: 0.5rem 0;
+        transition: all 0.3s ease;
+        opacity: 0.7;
+      }
+
+      .footer-section a:hover {
+        color: var(--neon-blue);
+        opacity: 1;
+      }
+
+      .footer-bottom {
+        text-align: center;
+        margin-top: 3rem;
+        padding-top: 2rem;
+        border-top: 1px solid rgba(0, 247, 255, 0.1);
+        color: var(--text-color);
+        opacity: 0.5;
+      }
+
+      @media (max-width: 1200px) {
+        .top-section {
+          min-height: 500px;
+        }
+      }
+
+      @media (max-width: 1024px) {
+        .top-section {
+          flex-direction: column;
+          height: auto;
+          gap: 1.5rem;
+        }
+
+        .preview-area {
+          min-height: 400px;
+        }
+
+        .controls-panel {
+          width: 100%;
+        }
+
+        .controls-container {
+          height: auto;
+        }
+
+        .settings-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .main-content {
+          padding: 1rem;
+        }
+
+        .preview-area {
+          min-height: 300px;
+        }
+
+        .color-grid {
+          grid-template-columns: repeat(4, 1fr);
+        }
+
+        .footer-content {
+          grid-template-columns: 1fr;
+        }
+
+        .clip-shapes {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      @media (max-width: 480px) {
+        .header {
+          padding: 0 1rem;
+        }
+
+        .color-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+
+        .settings-section {
+          padding: 1.5rem;
+        }
+
+        .clip-shapes {
+          grid-template-columns: 1fr;
+        }
+
+        .action-buttons {
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .action-button {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <div class="logo">MrPaper</div>
+      <div class="header-controls">
+        <button class="theme-toggle" id="theme-toggle">
+          <i class="ri-moon-line"></i>
+        </button>
+        <div class="hamburger" id="hamburger">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+    </header>
+
+    <nav class="sidebar" id="sidebar">
+      <ul class="menu">
+        <li><a href="#home">Главная</a></li>
+        <li><a href="#about">О нас</a></li>
+        <li><a href="#services">Услуги</a></li>
+        <li><a href="#contact">Контакты</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <div class="top-section">
+        <div class="preview-area">
+          <!-- 3D Preview Area -->
+        </div>
+
+        <div class="controls-panel">
+          <div class="controls-container">
+            <div class="upload-box">
+              <h3>Загрузка фото</h3>
+              <div class="upload-area" id="photo-upload">
+                <p>
+                  Перетащите файл сюда<br />или<br />нажмите чтобы загрузить
+                </p>
+              </div>
+            </div>
+
+            <div class="upload-box">
+              <h3>Загрузка фона</h3>
+              <div class="upload-area" id="background-upload">
+                <p>
+                  Перетащите файл сюда<br />или<br />нажмите чтобы загрузить
+                </p>
+              </div>
+            </div>
+            <div class="color-picker">
+              <h3>Фон бумаги</h3>
+              <div class="color-grid">
+                <div class="color-circle" style="background: rgb(255, 255, 255);"></div> <!-- Белый -->
+                <div class="color-circle" style="background: rgb(0, 255, 0);"></div> <!-- Зеленый -->
+                <div class="color-circle" style="background: rgb(0, 0, 255);"></div> <!-- Синий -->
+                <div class="color-circle" style="background: rgb(255, 255, 0);"></div> <!-- Желтый -->
+                <div class="color-circle" style="background: rgb(255, 0, 255);"></div> <!-- Фуксия -->
+                <div class="color-circle" style="background: rgb(0, 255, 255);"></div> <!-- Бирюзовый -->
+                <div class="color-circle" style="background: rgb(255, 136, 0);"></div> <!-- Оранжевый -->
+                <div class="color-circle" style="background: rgb(136, 255, 0);"></div> <!-- Лаймовый -->
+                <div class="color-circle" style="background: rgb(0, 136, 255);"></div> <!-- Голубой -->
+                <div class="color-circle" style="background: rgb(255, 0, 136);"></div> <!-- Розовый -->
+              </div>
+              <!-- Остальная часть color-picker (Форма 3D модели) остается без изменений -->
+            </div>
+
+              <h3>Форма 3D модели</h3>
+              <div class="shapes-grid">
+                <button class="shape-button active">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 7 L8 4 L20 4 L16 7 L16 17 L4 17 Z" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linejoin="round"/>
+                    <path d="M16 7 L20 4 L20 14 L16 17" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linejoin="round"/>
+                    <path d="M4 7 L16 7 L16 17 L4 17 Z" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linejoin="round"/>
+                  </svg>
+                  Прямоугольник
+                </button>
+                <button class="shape-button">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 20L4 16L12 12L20 16L12 20Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                    <path d="M12 20L12 4L20 16Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                    <path d="M12 20L12 4L4 16Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                    <circle cx="12" cy="4" r="0.5" stroke="currentColor" stroke-width="1" fill="none"/>
+                  </svg>
+                  Пирамида
+                </button>
+                <button class="shape-button">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <ellipse cx="12" cy="6" rx="8" ry="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                    <line x1="4" y1="6" x2="4" y2="18" stroke="currentColor" stroke-width="1.5"/>
+                    <line x1="20" y1="6" x2="20" y2="18" stroke="currentColor" stroke-width="1.5"/>
+                    <ellipse cx="12" cy="18" rx="8" ry="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                  </svg>
+                  Цилиндр
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-grid">
+        <section class="settings-section">
+          <h2>Настройка сетки</h2>
+          <div class="slider-group">
+            <div class="slider-container">
+              <label>Строки: <span>0.5</span></label>
+              <input type="range" min="0" max="1" step="0.1" value="0.5" title="Строки" />
+            </div>
+            <div class="slider-container">
+              <label>Столбцы: <span>0.5</span></label>
+              <input type="range" min="0" max="1" step="0.1" value="0.5" title="Столбцы" />
+            </div>
+            <div class="slider-container">
+              <label>Внешние отступы: <span>0.5</span></label>
+              <input type="range" min="0" max="1" step="0.1" value="0.5" title="Внешние отступы" />
+            </div>
+            <div class="clip-shape-selector">
+              <h4>Форма обрезки:</h4>
+              <div class="clip-shapes">
+                <button class="clip-shape-btn active">
+                  <i class="ri-square-line"></i>
+                  <span>Квадрат</span>
+                </button>
+                <button class="clip-shape-btn">
+                  <i class="ri-circle-line"></i>
+                  <span>Круг</span>
+                </button>
+                <button class="clip-shape-btn">
+                  <i class="ri-triangle-line"></i>
+                  <span>Треугольник</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="settings-section">
+          <h2>Настройка фото</h2>
+          <div class="slider-group">
+            <div class="slider-container">
+              <label>Яркость: <span>0.5</span></label>
+              <input type="range" min="0" max="1" step="0.1" value="0.5" title="Яркость" />
+            </div>
+            <div class="slider-container">
+              <label>Контраст: <span>0.5</span></label>
+              <input type="range" min="0" max="1" step="0.1" value="0.5" title="Контраст" />
+            </div>
+            <div class="slider-container">
+              <label>Насыщенность: <span>0.5</span></label>
+              <input type="range" min="0" max="1" step="0.1" value="0.5" title="Насыщенность" />
+            </div>
+            <div class="slider-container">
+              <label>Резкость: <span>0.5</span></label>
+              <input type="range" min="0" max="1" step="0.1" value="0.5" title="Резкость" />
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="modal-overlay" id="resetModal">
+        <div class="modal">
+          <h3>Подтверждение</h3>
+          <p>Вы действительно хотите отменить все изменения?</p>
+          <div class="modal-buttons">
+            <button class="modal-btn cancel" id="cancelReset">Отмена</button>
+            <button class="modal-btn confirm" id="confirmReset">Подтвердить</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-buttons">
+        <button class="action-button reset">
+          <i class="ri-restart-line"></i>
+          Отменить все изменения
+        </button>
+        <button class="action-button save">
+          <i class="ri-save-line"></i>
+          Сохранить все изменения
+        </button>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h3>Контакты</h3>
+          <p>Email: contact@mrpaper.com</p>
+          <p>Телефон: +7 (999) 123-45-67</p>
+          <p>Адрес: улица такая такая дом такой то такой то</p>
+        </div>
+        <div class="footer-section">
+          <h3>Быстрые ссылки</h3>
+          <ul>
+            <li><a href="#about">О нас</a></li>
+            <li><a href="#faq">Частые вопросы</a></li>
+            <li><a href="#privacy">Политика конфиденциальности</a></li>
+            <li><a href="#terms">Условия использования</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h3>Мы в соцсетях</h3>
+          <ul class="social-links">
+            <li><a href="#instagram">Instagram</a></li>
+            <li><a href="#vk">ВКонтакте</a></li>
+            <li><a href="#telegram">Telegram</a></li>
+            <li><a href="#youtube">YouTube</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2024 MrPaper. Все права защищены.</p>
+      </div>
+    </footer>
+    <script type="module">
+      import * as THREE from 'three';
+      import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+    
+      let currentShape = 'box';
+      let scene, camera, renderer, controls, currentMesh;
+      let textureLoader = new THREE.TextureLoader();
+      let currentTexture = null;
+      let lastInteractionTime = Date.now();
+      let imagePaths = [];
+      let backgroundPath = '';
+      let selectedBackgroundColor = null;
+    
+      function init() {
+        scene = new THREE.Scene();
+        scene.background = null;
+    
+        const container = document.querySelector('.preview-area');
+        const aspect = container.offsetWidth / container.offsetHeight;
+        camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
+        camera.position.set(3, 2, 3);
+        camera.lookAt(0, 0, 0);
+    
+        renderer = new THREE.WebGLRenderer({ 
+          antialias: true,
+          powerPreference: "high-performance",
+          precision: "highp",
+          alpha: true
+        });
+        renderer.setClearColor(0x000000, 0);
+        renderer.setSize(container.offsetWidth, container.offsetHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.0;
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        container.appendChild(renderer.domElement);
+    
+        controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.enableZoom = true;
+        controls.enablePan = false;
+        controls.autoRotateSpeed = 7;
+        controls.autoRotate = false;
+        controls.maxPolarAngle = Math.PI;
+        controls.minPolarAngle = 0;
+        controls.maxAzimuthAngle = Infinity;
+        controls.minAzimuthAngle = -Infinity;
+        controls.minDistance = 2.5;
+        controls.maxDistance = 5.5;
+    
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+    
+        const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight1.position.set(5, 5, 5);
+        scene.add(directionalLight1);
+    
+        const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight2.position.set(-5, -5, -5);
+        scene.add(directionalLight2);
+    
+        const pmremGenerator = new THREE.PMREMGenerator(renderer);
+        pmremGenerator.compileEquirectangularShader();
+    
+        const envTexture = new THREE.CubeTextureLoader()
+          .setPath('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/cube/Park3Med/')
+          .load([
+            'px.jpg', 'nx.jpg',
+            'py.jpg', 'ny.jpg',
+            'pz.jpg', 'nz.jpg'
+          ], () => {
+            const envMap = pmremGenerator.fromCubemap(envTexture).texture;
+            scene.environment = envMap;
+            pmremGenerator.dispose();
+          });
+    
+        createShape('box');
+        setupEventListeners();
+        setupUIControls();
+        animate();
+        window.addEventListener('resize', onWindowResize, false);
+      }
+    
+      function setupEventListeners() {
+        document.querySelectorAll('.shape-button').forEach(button => {
+          button.addEventListener('click', () => {
+            document.querySelectorAll('.shape-button').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            const buttonText = Array.from(button.childNodes)
+              .filter(node => node.nodeType === 3)
+              .map(node => node.textContent.trim())
+              .join('')
+              .toLowerCase();
+            if (buttonText === 'пирамида') createShape('pyramid');
+            else if (buttonText === 'цилиндр') createShape('cylinder');
+            else if (buttonText === 'прямоугольник') createShape('box');
+          });
+        });
+    
+        document.addEventListener('mousedown', (event) => {
+          if (isClickInsideScene(event)) lastInteractionTime = Date.now();
+        });
+        document.addEventListener('mousemove', (event) => {
+          if (isClickInsideScene(event)) lastInteractionTime = Date.now();
+        });
+        document.addEventListener('keydown', () => lastInteractionTime = Date.now());
+    
+        setupTextureUploadAreas();
+      }
+    
+      function setupUIControls() {
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = themeToggle.querySelector('i');
+        themeToggle.addEventListener('click', () => {
+          const currentTheme = document.documentElement.getAttribute('data-theme');
+          const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', newTheme);
+          themeIcon.className = newTheme === 'dark' ? 'ri-moon-line' : 'ri-sun-line';
+          scene.background = new THREE.Color(newTheme === 'dark' ? 0x0a0b1e : 0xf5f5f7);
+        });
+    
+        const hamburger = document.getElementById('hamburger');
+        const sidebar = document.getElementById('sidebar');
+        hamburger.addEventListener('click', () => {
+          hamburger.classList.toggle('active');
+          sidebar.classList.toggle('active');
+        });
+    
+        document.addEventListener('click', (e) => {
+          if (!hamburger.contains(e.target) && !sidebar.contains(e.target)) {
+            hamburger.classList.remove('active');
+            sidebar.classList.remove('active');
+          }
+        });
+    
+        setupResetModal();
+        setupClipShapeButtons();
+        setupColorCircles();
+    
+        document.querySelectorAll('input[type="range"]').forEach(slider => {
+          slider.addEventListener('input', (e) => {
+            const valueDisplay = e.target.previousElementSibling.querySelector('span');
+            valueDisplay.textContent = e.target.value;
+            updateConfigAndPreview();
+          });
+        });
+    
+        document.querySelector('.action-button.save').addEventListener('click', () => {
+          downloadCollage();
+        });
+      }
+    
+      function setupTextureUploadAreas() {
+        const photoUploadArea = document.getElementById('photo-upload');
+        const backgroundUploadArea = document.getElementById('background-upload');
+    
+        [photoUploadArea, backgroundUploadArea].forEach(area => {
+          area.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            area.style.borderColor = 'var(--neon-blue)';
+            area.style.background = 'rgba(0, 247, 255, 0.1)';
+          });
+    
+          area.addEventListener('dragleave', () => {
+            area.style.borderColor = 'rgba(0, 247, 255, 0.3)';
+            area.style.background = 'rgba(255, 255, 255, 0.05)';
+          });
+    
+          area.addEventListener('drop', (e) => {
+            e.preventDefault();
+            area.style.borderColor = 'rgba(0, 247, 255, 0.3)';
+            area.style.background = 'rgba(255, 255, 255, 0.05)';
+            const files = e.dataTransfer.files;
+            if (files.length) {
+              handleFileUpload(files, area === photoUploadArea ? 'photos' : 'background');
+            }
+          });
+    
+          area.addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.multiple = area === photoUploadArea;
+            input.style.display = 'none';
+            input.addEventListener('change', (e) => {
+              const files = e.target.files;
+              if (files.length) {
+                handleFileUpload(files, area === photoUploadArea ? 'photos' : 'background');
+              }
+            });
+            document.body.appendChild(input);
+            input.click();
+            document.body.removeChild(input);
+          });
+        });
+      }
+    
+      async function handleFileUpload(files, type) {
+        const formData = new FormData();
+        if (type === 'photos') {
+          for (let file of files) {
+            formData.append('photos', file);
+          }
+        } else {
+          formData.append('background', files[0]);
+        }
+    
+        try {
+          const response = await fetch('/MrPapper/upload_files', {
+            method: 'POST',
+            body: formData
+          });
+          const result = await response.json();
+          if (result.status === 'success') {
+            if (type === 'photos') {
+              imagePaths = result.paths;
+              document.getElementById('photo-upload').innerHTML = `<p>Загружено ${imagePaths.length} фото</p>`;
+            } else {
+              backgroundPath = result.path;
+              selectedBackgroundColor = null;
+              document.getElementById('background-upload').innerHTML = `<p>Фон загружен</p>`;
+              applyTexture(backgroundPath);
+            }
+            updateConfigAndPreview();
+          }
+        } catch (error) {
+          console.error('Ошибка загрузки:', error);
+        }
+      }
+    
+      async function updateConfigAndPreview() {
+        const rows = document.querySelector('input[title="Строки"]').value;
+        const cols = document.querySelector('input[title="Столбцы"]').value;
+        const spacing = document.querySelector('input[title="Внешние отступы"]').value;
+        const brightness = document.querySelector('input[title="Яркость"]').value;
+        const contrast = document.querySelector('input[title="Контраст"]').value;
+        const saturation = document.querySelector('input[title="Насыщенность"]').value;
+        const sharpness = document.querySelector('input[title="Резкость"]').value;
+        const clipShape = document.querySelector('.clip-shape-btn.active span').textContent.toLowerCase() === 'круг' ? 'yes' : 'no';
+    
+        const configData = {
+          rows,
+          cols,
+          spacing,
+          brightness,
+          contrast,
+          saturation,
+          sharpness,
+          clip_shape: clipShape,
+          image_paths: imagePaths,
+          background_path: backgroundPath,
+          background_color: selectedBackgroundColor || '#ffffff'
+        };
+    
+        try {
+          const response = await fetch('/MrPapper/update_config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(configData)
+          });
+    
+          if (imagePaths.length > 0) {
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            textureLoader.load(url, (texture) => {
+              texture.encoding = THREE.sRGBEncoding;
+              texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+              texture.minFilter = THREE.LinearMipmapLinearFilter;
+              texture.magFilter = THREE.LinearFilter;
+              texture.generateMipmaps = true;
+              texture.wrapS = THREE.RepeatWrapping;
+              texture.wrapT = THREE.RepeatWrapping;
+              texture.repeat.set(1, 1);
+              currentTexture = texture;
+              createShape(currentShape);
+              URL.revokeObjectURL(url);
+            });
+          } else {
+            if (backgroundPath) {
+              applyTexture(backgroundPath);
+            } else {
+              currentMesh.material.map = null;
+              currentMesh.material.color.setStyle(selectedBackgroundColor || '#ffffff');
+              currentMesh.material.needsUpdate = true;
+            }
+          }
+        } catch (error) {
+          console.error('Ошибка обновления:', error);
+        }
+      }
+    
+      async function downloadCollage() {
+        if (!imagePaths.length) {
+          alert('Пожалуйста, загрузите изображения перед сохранением.');
+          return;
+        }
+        try {
+          const response = await fetch('/MrPapper/generate_collage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ background_color: selectedBackgroundColor || '#ffffff' })
+          });
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = 'collage_a4.png';
+          link.click();
+          URL.revokeObjectURL(url);
+        } catch (error) {
+          console.error('Ошибка скачивания коллажа:', error);
+        }
+      }
+    
+      function setupResetModal() {
+        const resetModal = document.getElementById('resetModal');
+        const resetBtns = document.querySelectorAll('.action-button.reset');
+        const cancelResetBtn = document.getElementById('cancelReset');
+        const confirmResetBtn = document.getElementById('confirmReset');
+    
+        resetBtns.forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            resetModal.classList.add('active');
+          });
+        });
+    
+        cancelResetBtn.addEventListener('click', () => {
+          resetModal.classList.remove('active');
+        });
+    
+        confirmResetBtn.addEventListener('click', () => {
+          resetModal.classList.remove('active');
+          resetSliders();
+          imagePaths = [];
+          backgroundPath = '';
+          selectedBackgroundColor = null;
+          document.getElementById('photo-upload').innerHTML = `<p>Перетащите файл сюда<br />или<br />нажмите чтобы загрузить</p>`;
+          document.getElementById('background-upload').innerHTML = `<p>Перетащите файл сюда<br />или<br />нажмите чтобы загрузить</p>`;
+          createShape('box');
+          if (currentMesh) {
+            currentMesh.material.map = null;
+            currentMesh.material.color.setStyle('#ffffff');
+            currentMesh.material.needsUpdate = true;
+          }
+          updateConfigAndPreview();
+        });
+    
+        resetModal.addEventListener('click', (e) => {
+          if (e.target === resetModal) resetModal.classList.remove('active');
+        });
+      }
+    
+      function resetSliders() {
+        document.querySelectorAll('input[type="range"]').forEach(slider => {
+          slider.value = 0.5;
+          const valueDisplay = slider.previousElementSibling.querySelector('span');
+          valueDisplay.textContent = '0.5';
+        });
+      }
+    
+      function setupClipShapeButtons() {
+        document.querySelectorAll('.clip-shape-btn').forEach(button => {
+          button.addEventListener('click', () => {
+            document.querySelectorAll('.clip-shape-btn').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            updateConfigAndPreview();
+          });
+        });
+      }
+    
+      function setupColorCircles() {
+        const colorCircles = document.querySelectorAll(".color-circle");
+        colorCircles.forEach((circle) => {
+          circle.addEventListener("mouseenter", () => {
+            const color = circle.style.backgroundColor;
+            circle.style.boxShadow = `0 0 15px 5px ${color}`;
+          });
+    
+          circle.addEventListener("mouseleave", () => {
+            circle.style.boxShadow = "none";
+          });
+    
+          circle.addEventListener("click", () => {
+            colorCircles.forEach((c) => c.classList.remove("selected"));
+            circle.classList.add("selected");
+            selectedBackgroundColor = circle.style.backgroundColor;
+            backgroundPath = '';
+            document.getElementById('background-upload').innerHTML = `<p>Перетащите файл сюда<br />или<br />нажмите чтобы загрузить</p>`;
+            updateConfigAndPreview();
+          });
+        });
+      }
+    
+      function isClickInsideScene(event) {
+        const rect = renderer.domElement.getBoundingClientRect();
+        return (
+          event.clientX >= rect.left &&
+          event.clientX <= rect.right &&
+          event.clientY >= rect.top &&
+          event.clientY <= rect.bottom
+        );
+      }
+    
+      function createShape(shape) {
+        if (currentMesh) scene.remove(currentMesh);
+        const materialParams = {
+          color: 0xffffff,
+          metalness: 0.5,
+          roughness: 0.2,
+          envMapIntensity: 0.8,
+          clearcoat: 0.5,
+          clearcoatRoughness: 0.2
+        };
+        if (currentTexture) materialParams.map = currentTexture;
+        const material = new THREE.MeshPhysicalMaterial(materialParams);
+        let geometry;
+    
+        switch (shape) {
+          case 'cylinder':
+            geometry = new THREE.CylinderGeometry(1, 1, 2, 128);
+            break;
+          case 'pyramid':
+            geometry = new THREE.ConeGeometry(1, 2, 4);
+            break;
+          default:
+            geometry = new THREE.BoxGeometry(2, 1.5, 3);
+        }
+    
+        geometry.computeTangents();
+        geometry.computeVertexNormals();
+        currentMesh = new THREE.Mesh(geometry, material);
+        currentMesh.castShadow = true;
+        currentMesh.receiveShadow = true;
+        scene.add(currentMesh);
+        currentShape = shape;
+      }
+    
+      function applyTexture(imageUrl) {
+        textureLoader.load(imageUrl, (texture) => {
+          texture.encoding = THREE.sRGBEncoding;
+          texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+          texture.minFilter = THREE.LinearMipmapLinearFilter;
+          texture.magFilter = THREE.LinearFilter;
+          texture.generateMipmaps = true;
+          texture.wrapS = THREE.RepeatWrapping;
+          texture.wrapT = THREE.RepeatWrapping;
+          texture.repeat.set(1, 1);
+          currentTexture = texture;
+          createShape(currentShape);
+        });
+      }
+    
+      function onWindowResize() {
+        const container = document.querySelector('.preview-area');
+        camera.aspect = container.offsetWidth / container.offsetHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.offsetWidth, container.offsetHeight);
+      }
+    
+      function animate() {
+        requestAnimationFrame(animate);
+        if (Date.now() - lastInteractionTime > 800) controls.autoRotate = true;
+        else controls.autoRotate = false;
+        controls.update();
+        renderer.render(scene, camera);
+      }
+    
+      document.addEventListener('DOMContentLoaded', () => {
+        init();
+      });
+    </script>
